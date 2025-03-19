@@ -1,110 +1,463 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'attendance.dart';
+import 'notification.dart';
+
+void main() {
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      body: SingleChildScrollView(
+        child: EmployeeDashboard(),
+      ),
+    ),
+  ));
+}
 
 class EmployeeDashboard extends StatefulWidget {
   const EmployeeDashboard({super.key});
 
   @override
-  State<EmployeeDashboard> createState() => _EmployeeDashboardState();
+  _EmployeeDashboardState createState() => _EmployeeDashboardState();
 }
 
 class _EmployeeDashboardState extends State<EmployeeDashboard> {
-  int _selectedIndex = 0;
+  bool isCheckedIn = false;
+  DateTime? checkInTime;
+  OverlayEntry? _overlayEntry;
+  bool showAllUpdates = false;
 
-  final List<String> _tabs = ['Overview', 'Attendance', 'Leave', 'Notification'];
-  final List<IconData> _tabIcons = [
-    Icons.person_outline,
-    Icons.fingerprint,
-    Icons.event,
-    Icons.notifications_none
-  ];
+  void handleCheckInOut() {
+    setState(() {
+      if (isCheckedIn) {
+        handleCheckOut();
+        isCheckedIn = false;
+      } else {
+        isCheckedIn = true;
+        checkInTime = DateTime.now();
+        handleCheckIn();
+      }
+    });
+  }
+
+  void showTopPopup(String message, String subMessage) {
+    _overlayEntry?.remove();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 10,
+        right: 10,
+        child: Material(
+          elevation: 5,
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.black),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        subMessage,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _overlayEntry?.remove();
+                    _overlayEntry = null;
+                  },
+                  child: Text(
+                    "OK",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+
+    Future.delayed(Duration(seconds: 5), () {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+    });
+  }
+
+  void handleCheckIn() {
+    DateTime now = DateTime.now();
+    showTopPopup(
+      'Successfully checked in!',
+      'Check-in time: ${now.hour}:${now.minute}:${now.second}',
+    );
+  }
+
+  void handleCheckOut() {
+    if (checkInTime != null) {
+      final duration = DateTime.now().difference(checkInTime!);
+      final workedHours = duration.inHours + (duration.inMinutes % 60) / 60;
+      showTopPopup(
+        'Checked out successfully!',
+        'You worked for ${workedHours.toStringAsFixed(2)} hours today.',
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {}, // Handle back action
+        ),
+        title: Text(
+          'Employee Dashboard',
+          style: TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: Colors.teal,
-            child: Text(
-              'M',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
-        titleSpacing: 0,
-        title: const Row(
-          children: [
-            Text(
-              'Medhir',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: 8),
-          ],
-        ),
-        actions: [
-          CircleAvatar(
-            backgroundColor: Colors.teal[100],
-            child: Text(
-              'EU',
-              style: TextStyle(
-                color: Colors.teal[800],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
+        centerTitle: true,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Good Morning Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Good Morning, ',
+                              style: TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Alex',
+                              style: TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        DateFormat('EEEE, d MMMM y').format(DateTime.now()),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => NotificationScreen()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none, // Allows the Positioned widget to go out of bounds
+                                children: [
+                                  Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.black,
+                                    size: 28,
+                                  ),
+                                  Positioned(
+                                    top: -3,
+                                    right: -3,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(width: 8),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10), // ✅ Moved inside the Row's children
+                      GestureDetector(
+                        onTap: () {
+                          print('Profile Picture Clicked');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Profile Picture Clicked'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: AssetImage('assets/avatar.png'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 40),
+
+              // Today's Status Card
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Today's Status",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                isCheckedIn ? Icons.circle : Icons.circle_outlined,
+                                size: 12,
+                                color: isCheckedIn ? Colors.teal : Colors.grey,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                isCheckedIn
+                                    ? 'Checked in at ${checkInTime!.hour}:${checkInTime!.minute.toString().padLeft(2, '0')}'
+                                    : 'Not checked in yet',
+                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: handleCheckInOut,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isCheckedIn ? Colors.red.shade400 : Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 3,
+                        ),
+                        child: Text(
+                          isCheckedIn ? 'Check Out' : 'Check In',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Quick Actions
+              _buildQuickActions(context),
+              SizedBox(height: 20),
+
+              // Agenda of the Day
+              _buildAgendaOfTheDay(),
+              SizedBox(height: 20),
+
+              // Latest Updates
+              _buildLatestUpdates(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _quickActionItem('Leave', Icons.event, Colors.blue, () {
+          // TODO: Add navigation for Leave if needed
+        }),
+        _quickActionItem('Attendance', Icons.access_time, Colors.purple, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AttendanceScreen()),
+          );
+        }),
+        _quickActionItem('Payroll', Icons.credit_card, Colors.orange, () {
+          // TODO: Add navigation for Payroll if needed
+        }),
+      ],
+    );
+  }
+
+  Widget _quickActionItem(String label, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
         children: [
-          _buildHeader(),
-          _buildTabBar(),
-          Expanded(
-            child: _buildTabContent(),
+          CircleAvatar(
+            backgroundColor: color.withOpacity(0.1),
+            radius: 28,
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildAgendaOfTheDay() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16), // Rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1), // Light shadow
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4), // Shadow at the bottom
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Employee Dashboard',
+            'Agenda of the Day',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Welcome back, Employee User',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+          const SizedBox(height: 12),
+          _agendaItem('Team Standup', '10:00 AM', Icons.people, Colors.blue),
+          _agendaItem('Lunch Break', '12:30 PM', Icons.lunch_dining, Colors.orange),
+          _agendaItem('Quarterly Review', '02:00 PM', Icons.bar_chart, Colors.purple),
+          _agendaItem('Submit Weekly Report', '04:30 PM', Icons.assignment, Colors.green),
+        ],
+      ),
+    );
+  }
+
+  Widget _agendaItem(String title, String time, IconData icon, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12), // Space between items
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16), // Padding inside the container
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F0F0), // Light grey background
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05), // Light shadow for depth
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 2), // Subtle shadow below
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.1),
+                child: Icon(icon, color: color),
+              ),
+              const SizedBox(width: 16), // Space between icon and text
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            time,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
             ),
           ),
         ],
@@ -112,525 +465,123 @@ class _EmployeeDashboardState extends State<EmployeeDashboard> {
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildLatestUpdates() {
+    List<Widget> updates = [
+      _updateItem('Your leave has been approved', 'Today, 09:45 AM', Icons.check_circle, Colors.green),
+      _updateItem('New company policy update', 'Yesterday, 03:30 PM', Icons.notifications, Colors.red),
+      _updateItem('Your payroll is processed', '2 days ago', Icons.attach_money, Colors.orange),
+      if (showAllUpdates) ...[
+        _updateItem('Team meeting rescheduled to 4 PM', '2 days ago', Icons.event, Colors.blue),
+        _updateItem('Quarterly targets announced', '3 days ago', Icons.announcement, Colors.purple),
+      ]
+    ];
+
+    return _playCard(
+      'Latest Updates',
+      updates,
+      footer: GestureDetector(
+        onTap: () {
+          setState(() {
+            showAllUpdates = !showAllUpdates;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                showAllUpdates ? 'Show Less' : 'See More',
+                style: const TextStyle(color: Colors.teal, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Icon(
+                showAllUpdates ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                color: Colors.teal,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _updateItem(String title, String time, IconData icon, Color color) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(4),
+      margin: const EdgeInsets.only(bottom: 12), // Space between items
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Padding inside the container
       decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(12), // Rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05), // Light shadow for depth
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4), // Shadow at the bottom
+          ),
+        ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_tabs.length, (index) {
-          bool isSelected = index == _selectedIndex;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.1),
+                child: Icon(icon, color: color),
               ),
-              child: Row(
+              const SizedBox(width: 16), // Space between icon and text
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    _tabIcons[index],
-                    color: isSelected ? Colors.black : Colors.black54,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
                   Text(
-                    _tabs[index],
-                    style: TextStyle(
-                      color: isSelected ? Colors.black : Colors.black54,
-                      fontSize: 12,
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  // ✅ Updated _buildTabContent to include Leave Card
-  Widget _buildTabContent() {
-    switch (_selectedIndex) {
-      case 0:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildProfileCard(),
-              const SizedBox(height: 12),
-              _buildAttendanceCard(),
-              const SizedBox(height: 12),
-              _buildLeaveCard(), // ✅ New Leave Card Added Here
             ],
-          ),
-        );
-      case 1:
-        return const Center(child: Text('Attendance Content'));
-      case 2:
-        return const Center(child: Text('Leave Content'));
-      case 3:
-        return const Center(child: Text('Notifications Content'));
-      default:
-        return const SizedBox();
-    }
-  }
-
-  Widget _buildProfileCard() {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.person_outline, color: Colors.teal, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'EU',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Employee User',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Software Developer',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Text(
-                    'Engineering',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildProfileRow('Employee ID', 'EMP2'),
-            _buildProfileRow('Email', 'employee@example.com'),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Status',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Active',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildProfileRow('Joining Date', '01/01/2022'),
-            _buildProfileRow('Manager', 'Admin User'),
-          ],
-        ),
-      ),
-    );
-  }
-
-// ✅ Reusable Row Widget for Profile
-  Widget _buildProfileRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ],
       ),
     );
   }
 
-
-
-  // ✅ Attendance Card
-  Widget _buildAttendanceCard() {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
+  Widget _playCard(String title, List<Widget> items, {Widget? footer}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 6,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ✅ Header Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, color: Colors.teal, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Attendance',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.access_time,
-                    color: Colors.green,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ✅ Date and Status
-            const Text(
-              'Tuesday, March 18',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              "Today's Status",
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ✅ Check-In and Check-Out Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text('Check In'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal, // Light teal background
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.access_time, size: 18),
-                    label: const Text('Check Out'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black87,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ✅ Check-In Time
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  'Check In:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                Text(
-                  '09:05 AM',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ✅ Monthly Attendance Progress Bar
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Monthly Attendance',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: 0.91, // 91% attendance
-                    backgroundColor: Colors.grey[200],
-                    color: Colors.teal,
-                    minHeight: 6,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '91%',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          ...items,
+          if (footer != null) footer,
+        ],
       ),
     );
   }
-
-
-  // ✅ New Leave Card
-  Widget _buildLeaveCard() {
-    return Card(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.calendar_today_outlined, color: Colors.teal, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Leave',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.yellow.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.calendar_today_outlined,
-                    color: Colors.orange,
-                    size: 18,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Leave Balance',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const Text(
-              'Available leaves',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Casual Leave Row with Progress Bar
-            _buildLeaveProgressRow('Casual Leave', 7, 12),
-
-            const SizedBox(height: 8),
-
-            // Sick Leave Row with Progress Bar
-            _buildLeaveProgressRow('Sick Leave', 8, 10),
-
-            const SizedBox(height: 12),
-
-            // Apply for Leave Button
-            OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Add your apply leave logic
-              },
-              icon: const Icon(
-                Icons.add_circle_outline,
-                color: Colors.black54,
-                size: 18,
-              ),
-              label: const Text(
-                'Apply for Leave',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.black12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 12),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-// ✅ Row with Progress Bar
-  Widget _buildLeaveProgressRow(String label, int used, int total) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            Text(
-              '$used/$total',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: used / total,
-          backgroundColor: Colors.grey.shade300,
-          color: Colors.teal,
-          minHeight: 6,
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ],
-    );
-  }
-  }
+}

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/employee_dashboard.dart';
+import 'package:medhirappv1/screens/notification.dart';
+import 'package:medhirappv1/screens/employee_dashboard.dart';
+import 'package:medhirappv1/screens/expense_form.dart'; // Import ExpenseForm
 
 void main() {
   runApp(const MyApp());
@@ -17,8 +19,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100],
         useMaterial3: true,
       ),
-      home: const EmployeeDashboard(),
+      home: const EmployeeDashboard(), // Set SalaryPayroll as home
     );
   }
 }
-
